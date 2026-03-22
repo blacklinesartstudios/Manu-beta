@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="te">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💙 Manubeta — Trading Assistant</title>
+<style>
+:root {
+  --bg: #0d0d0d;
+  --bg2: #141414;
+  --bg3: #1a1a1a;
+  --card: #1e1e1e;
+  --border: #2a2a2a;
+  --border2: #333;
+  --accent: #2563eb;
+  --accent2: #3b82f6;
+  --green: #00c853;
+  --green2: #00e676;
+  --red: #f44336;
+  --red2: #ff5252;
+  --yellow: #ffd600;
+  --purple: #7c3aed;
+  --text: #f0f0f0;
+  --muted: #666;
+  --muted2: #444;
+  --heart: #ec4899;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-serif;min-height:100vh;overflow-x:hidden}
+
+/* ── HEADER ── */
+.header{display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.logo{font-size:22px}
+.header-title{font-size:17px;font-weight:700;color:var(--text)}
+.header-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.live-badge{margin-left:auto;display:flex;align-items:center;gap:6px;background:rgba(0,200,83,0.1);border:1px solid rgba(0,200,83,0.3);border-radius:100px;padding:5px 12px;font-size:12px;color:var(--green);font-weight:600}
+.live-dot{width:7px;height:7px;background:var(--green);border-radius:50%;animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.settings-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--muted);padding:7px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;transition:all .2s}
+.settings-btn:hover{color:var(--text);border-color:var(--accent)}
+
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:1fr 340px;gap:0;height:calc(100vh - 57px)}
+@media(max-width:900px){.layout{grid-template-columns:1fr;height:auto}}
+
+/* ── LEFT: CHART AREA ── */
+.chart-section{padding:16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;border-right:1px solid var(--border)}
+
+.chart-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.chart-title{font-size:15px;font-weight:700}
+.instrument-pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{padding:5px 12px;border-radius:100px;border:1px solid var(--border2);font-size:12px;cursor:pointer;transition:all .2s;color:var(--muted);background:var(--bg3)}
+.pill.active{background:var(--accent);color:white;border-color:var(--accent)}
+.pill:hover:not(.active){border-color:var(--accent2);color:var(--accent2)}
+
+/* Chart Canvas Container */
+.chart-wrap{position:relative;background:var(--bg3);border:1px solid var(--border);border-radius:12px;overflow:hidden;min-height:380px}
+.chart-canvas{width:100%;height:380px;display:block;cursor:crosshair}
+.chart-overlay-btns{position:absolute;top:10px;right:10px;display:flex;gap:6px}
+.chart-btn{background:rgba(0,0,0,0.7);border:1px solid var(--border2);color:var(--text);padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;backdrop-filter:blur(4px);transition:all .2s}
+.chart-btn:hover{border-color:var(--accent);color:var(--accent2)}
+.chart-btn.active-btn{border-color:var(--green);color:var(--green)}
+
+/* Price ticker */
+.price-bar{display:flex;align-items:center;gap:16px;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;flex-wrap:wrap}
+.price-instrument{font-size:13px;font-weight:700;color:var(--muted)}
+.price-val{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+.price-val.up{color:var(--green)}
+.price-val.down{color:var(--red)}
+.price-change{font-size:12px;font-weight:600}
+.price-change.up{color:var(--green)}
+.price-change.down{color:var(--red)}
+.price-meta{display:flex;gap:12px;margin-left:auto;flex-wrap:wrap}
+.price-item{font-size:11px;color:var(--muted);text-align:center}
+.price-item span{display:block;color:var(--text);font-weight:600;font-size:12px}
+
+/* Forecast overlay legend */
+.forecast-legend{display:flex;gap:12px;flex-wrap:wrap;padding:8px 12px;background:rgba(0,0,0,0.5);border-radius:8px;font-size:11px;position:absolute;bottom:10px;left:10px}
+.leg-item{display:flex;align-items:center;gap:5px}
+.leg-line{width:20px;height:2px;border-radius:1px}
+
+/* ── RIGHT: AI PANEL ── */
+.ai-panel{display:flex;flex-direction:column;background:var(--bg2);overflow:hidden}
+@media(max-width:900px){.ai-panel{border-top:1px solid var(--border)}}
+
+.ai-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.ai-avatar{width:36px;height:36px;background:linear-gradient(135deg,#2563eb,#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.ai-name{font-size:14px;font-weight:700}
+.ai-status{font-size:11px;color:var(--muted)}
+
+/* Analyze Button */
+.analyze-btn{margin:12px 16px;padding:13px;background:linear-gradient(135deg,var(--accent),var(--purple));border:none;border-radius:12px;color:white;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;letter-spacing:0.3px}
+.analyze-btn:hover{opacity:0.9;transform:translateY(-1px)}
+.analyze-btn:active{transform:translateY(0)}
+.analyze-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+
+/* Upload screenshot area */
+.upload-area{margin:0 16px 12px;border:2px dashed var(--border2);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.upload-area:hover{border-color:var(--accent2);background:rgba(37,99,235,0.05)}
+.upload-area input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-icon{font-size:24px;margin-bottom:6px}
+.upload-text{font-size:12px;color:var(--muted);line-height:1.6}
+.upload-text strong{color:var(--accent2)}
+
+/* Signal Card */
+.signal-card{margin:0 16px 12px;border-radius:12px;padding:14px;border:1px solid}
+.signal-card.long{background:rgba(0,200,83,0.08);border-color:rgba(0,200,83,0.3)}
+.signal-card.short{background:rgba(244,67,54,0.08);border-color:rgba(244,67,54,0.3)}
+.signal-card.neutral{background:rgba(255,214,0,0.06);border-color:rgba(255,214,0,0.2)}
+.signal-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.signal-badge{padding:5px 14px;border-radius:100px;font-size:13px;font-weight:800;letter-spacing:0.5px}
+.signal-badge.long{background:var(--green);color:#000}
+.signal-badge.short{background:var(--red);color:#fff}
+.signal-badge.neutral{background:var(--yellow);color:#000}
+.signal-instrument{font-size:13px;font-weight:700;color:var(--muted)}
+.signal-confidence{margin-left:auto;font-size:12px;color:var(--muted)}
+
+.levels-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.level-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 10px;text-align:center}
+.level-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px}
+.level-val{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}
+.level-val.entry{color:var(--accent2)}
+.level-val.sl{color:var(--red2)}
+.level-val.t1{color:#66bb6a}
+.level-val.t2{color:#4caf50}
+.level-val.t3{color:var(--green2)}
+.level-val.rr{color:var(--yellow)}
+
+.signal-note{font-size:12px;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);padding-top:8px;margin-top:4px}
+
+/* Warning box */
+.warning-box{margin:0 16px 12px;background:rgba(244,67,54,0.1);border:1px solid rgba(244,67,54,0.3);border-radius:10px;padding:12px 14px;font-size:12px;color:#ff8a80;line-height:1.6}
+.warning-box strong{color:var(--red2);display:block;margin-bottom:4px;font-size:13px}
+
+/* Chat messages */
+.chat-msgs{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px;min-height:200px}
+.chat-msgs::-webkit-scrollbar{width:4px}
+.chat-msgs::-webkit-scrollbar-track{background:var(--bg2)}
+.chat-msgs::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+.cmsg{display:flex;flex-direction:column;max-width:90%}
+.cmsg.user{align-self:flex-end;align-items:flex-end}
+.cmsg.bot{align-self:flex-start}
+.cbubble{padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.cmsg.user .cbubble{background:var(--accent);color:white;border-radius:14px 14px 4px 14px}
+.cmsg.bot .cbubble{background:var(--bg3);border:1px solid var(--border);border-radius:14px 14px 14px 4px}
+.ctime{font-size:10px;color:var(--muted2);margin-top:3px;padding:0 2px}
+
+/* typing */
+.typing{display:flex;gap:4px;align-items:center;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:14px 14px 14px 4px;width:fit-content}
+.tdot{width:7px;height:7px;background:var(--accent2);border-radius:50%;animation:tbounce 1.2s infinite}
+.tdot:nth-child(2){animation-delay:.2s}
+.tdot:nth-child(3){animation-delay:.4s}
+@keyframes tbounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+/* Chat input */
+.chat-input-wrap{padding:10px 16px;border-top:1px solid var(--border);display:flex;gap:8px}
+.chat-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:20px;padding:9px 14px;color:var(--text);font-size:13px;outline:none;font-family:inherit;transition:border-color .2s}
+.chat-input:focus{border-color:var(--accent)}
+.chat-input::placeholder{color:var(--muted)}
+.send-btn{width:36px;height:36px;background:var(--accent);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.send-btn:hover{background:var(--accent2)}
+.send-btn svg{width:16px;height:16px;fill:white}
+
+/* Settings Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.show{display:flex}
+.modal{background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:24px;width:100%;max-width:420px}
+.modal h3{font-size:17px;font-weight:700;margin-bottom:6px}
+.modal p{font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.6}
+.mfield{margin-bottom:14px}
+.mfield label{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.mfield input,.mfield select{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;outline:none;font-family:inherit}
+.mfield input:focus,.mfield select:focus{border-color:var(--accent)}
+.mfield select option{background:var(--bg3)}
+.save-btn{width:100%;padding:12px;background:var(--accent);border:none;border-radius:10px;color:white;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px;transition:background .2s}
+.save-btn:hover{background:var(--accent2)}
+
+/* Auto-scan toggle */
+.auto-row{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border)}
+.auto-label{font-size:12px;color:var(--muted)}
+.toggle-wrap{display:flex;align-items:center;gap:8px}
+.toggle{width:36px;height:20px;background:var(--border2);border-radius:100px;cursor:pointer;position:relative;transition:background .3s}
+.toggle.on{background:var(--accent)}
+.toggle::after{content:'';position:absolute;width:14px;height:14px;background:white;border-radius:50%;top:3px;left:3px;transition:transform .3s}
+.toggle.on::after{transform:translateX(16px)}
+.auto-timer{font-size:11px;color:var(--accent2)}
+
+/* Forecast info bar */
+.forecast-bar{display:none;margin:0 16px 12px;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.3);border-radius:10px;padding:10px 14px;font-size:12px;color:#a78bfa;line-height:1.6}
+.forecast-bar.show{display:block}
+</style>
+</head>
+<body>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3>💙 Manubeta Setup</h3>
+    <p>ఒక్కసారి fill చేయండి — అన్నీ save అవుతాయి.</p>
+    <div class="mfield">
+      <label>Groq API Key (Free — console.groq.com)</label>
+      <input type="password" id="inp-groq" placeholder="gsk_...">
+    </div>
+    <div class="mfield">
+      <label>మీ పేరు</label>
+      <input type="text" id="inp-name" placeholder="e.g. Raju, Kiran...">
+    </div>
+    <div class="mfield">
+      <label>Default Instrument</label>
+      <select id="inp-inst">
+        <option value="NIFTY">NIFTY 50</option>
+        <option value="BANKNIFTY">BANK NIFTY</option>
+        <option value="SENSEX">SENSEX</option>
+        <option value="STOCKS">Stocks</option>
+      </select>
+    </div>
+    <div class="mfield">
+      <label>Trading Style</label>
+      <select id="inp-style">
+        <option value="scalping">Scalping (1-5 min)</option>
+        <option value="intraday">Intraday (15-60 min)</option>
+        <option value="swing">Swing (Daily)</option>
+      </select>
+    </div>
+    <button class="save-btn" onclick="saveSetup()">💙 Save & Start</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">💙</div>
+  <div>
+    <div class="header-title">Manubeta Trading Assistant</div>
+    <div class="header-sub">Nifty · Bank Nifty · Sensex · Stocks · TradingView · Kotak Neo</div>
+  </div>
+  <div class="live-badge"><div class="live-dot"></div><span id="live-time">--:--:--</span></div>
+  <button class="settings-btn" onclick="document.getElementById('modal').classList.add('show')">⚙ Setup</button>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="layout">
+
+  <!-- LEFT: CHART + CONTROLS -->
+  <div class="chart-section">
+
+    <!-- Instrument Selector -->
+    <div class="chart-header">
+      <div class="chart-title">Live Chart</div>
+      <div class="instrument-pills">
+        <div class="pill active" onclick="selectInst(this,'NIFTY')">NIFTY</div>
+        <div class="pill" onclick="selectInst(this,'BANKNIFTY')">BANK NIFTY</div>
+        <div class="pill" onclick="selectInst(this,'SENSEX')">SENSEX</div>
+        <div class="pill" onclick="selectInst(this,'STOCK')">STOCKS</div>
+      </div>
+      <div style="margin-left:auto;font-size:12px;color:var(--muted)" id="tf-label">Timeframe:
+        <select id="tf-sel" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:3px 8px;font-size:12px;outline:none" onchange="changeTF(this.value)">
+          <option value="1">1m</option>
+          <option value="3">3m</option>
+          <option value="5" selected>5m</option>
+          <option value="15">15m</option>
+          <option value="60">1H</option>
+          <option value="D">1D</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Price Bar -->
+    <div class="price-bar">
+      <div class="price-instrument" id="pb-inst">NIFTY 50</div>
+      <div>
+        <div class="price-val up" id="pb-price">24,721.50</div>
+        <div class="price-change up" id="pb-change">▲ +143.20 (+0.58%)</div>
+      </div>
+      <div class="price-meta">
+        <div class="price-item">High<span id="pb-high">24,810</span></div>
+        <div class="price-item">Low<span id="pb-low">24,580</span></div>
+        <div class="price-item">Open<span id="pb-open">24,650</span></div>
+        <div class="price-item">Vol<span id="pb-vol">2.4M</span></div>
+      </div>
+    </div>
+
+    <!-- CHART CANVAS -->
+    <div class="chart-wrap">
+      <canvas class="chart-canvas" id="chart-canvas"></canvas>
+      <div class="chart-overlay-btns">
+        <button class="chart-btn" onclick="drawForecast('long')">📈 Long Forecast</button>
+        <button class="chart-btn" onclick="drawForecast('short')">📉 Short Forecast</button>
+        <button class="chart-btn" onclick="clearForecast()">🗑 Clear</button>
+        <button class="chart-btn active-btn" id="auto-draw-btn" onclick="toggleAutoDraw()">⚡ Auto Draw</button>
+      </div>
+      <div class="forecast-legend" id="forecast-legend" style="display:none">
+        <div class="leg-item"><div class="leg-line" style="background:#2563eb"></div><span style="font-size:11px;color:#aaa">Entry</span></div>
+        <div class="leg-item"><div class="leg-line" style="background:#f44336"></div><span style="font-size:11px;color:#aaa">SL</span></div>
+        <div class="leg-item"><div class="leg-line" style="background:#00c853;border-top:2px dashed #00c853;height:0"></div><span style="font-size:11px;color:#aaa">Targets</span></div>
+        <div class="leg-item"><div class="leg-line" style="background:#7c3aed"></div><span style="font-size:11px;color:#aaa">Forecast Path</span></div>
+      </div>
+    </div>
+
+    <!-- Auto Scan Row -->
+    <div class="auto-row">
+      <div>
+        <div class="auto-label">🔄 Auto Screenshot & Analyze</div>
+        <div class="auto-timer" id="auto-countdown"></div>
+      </div>
+      <div class="toggle-wrap">
+        <span style="font-size:12px;color:var(--muted)">Every 30s</span>
+        <div class="toggle" id="auto-toggle" onclick="toggleAutoScan()"></div>
+      </div>
+    </div>
+
+    <!-- Screenshot Upload -->
+    <div class="upload-area" id="upload-area">
+      <input type="file" id="chart-file" accept="image/*" onchange="handleUpload(this)">
+      <div class="upload-icon">📸</div>
+      <div class="upload-text">
+        <strong>మీ chart screenshot upload చేయండి</strong><br>
+        TradingView లేదా Kotak Neo chart screenshot తీసి ఇక్కడ drop చేయండి<br>
+        <span style="color:var(--muted2);font-size:11px">Windows: Win+Shift+S → screenshot → upload</span>
+      </div>
+    </div>
+
+    <!-- Uploaded chart preview -->
+    <div id="chart-preview" style="display:none">
+      <img id="chart-img" style="width:100%;border-radius:10px;border:1px solid var(--border)" alt="Chart">
+    </div>
+
+  </div>
+
+  <!-- RIGHT: AI PANEL -->
+  <div class="ai-panel">
+
+    <div class="ai-header">
+      <div class="ai-avatar">💙</div>
+      <div>
+        <div class="ai-name">Manubeta</div>
+        <div class="ai-status" id="ai-status">Trading signals ready</div>
+      </div>
+    </div>
+
+    <!-- Analyze Button -->
+    <button class="analyze-btn" id="analyze-btn" onclick="analyzeChart()">
+      🔍 Analyze Chart — Entry / SL / Targets చెప్పు
+    </button>
+
+    <!-- Signal Card (hidden until analysis) -->
+    <div id="signal-section" style="display:none">
+
+      <div class="signal-card" id="signal-card">
+        <div class="signal-header">
+          <div class="signal-badge" id="sig-badge">LONG</div>
+          <div class="signal-instrument" id="sig-inst">NIFTY</div>
+          <div class="signal-confidence" id="sig-conf">Confidence: 78%</div>
+        </div>
+
+        <div class="levels-grid">
+          <div class="level-box" style="grid-column:1/-1">
+            <div class="level-label">Entry Price</div>
+            <div class="level-val entry" id="lv-entry">24,720</div>
+          </div>
+          <div class="level-box">
+            <div class="level-label">Stop Loss 🛑</div>
+            <div class="level-val sl" id="lv-sl">24,640</div>
+          </div>
+          <div class="level-box">
+            <div class="level-label">Risk:Reward</div>
+            <div class="level-val rr" id="lv-rr">1:2.5</div>
+          </div>
+          <div class="level-box">
+            <div class="level-label">Target 1 🎯</div>
+            <div class="level-val t1" id="lv-t1">24,820</div>
+          </div>
+          <div class="level-box">
+            <div class="level-label">Target 2 🎯</div>
+            <div class="level-val t2" id="lv-t2">24,920</div>
+          </div>
+          <div class="level-box">
+            <div class="level-label">Target 3 🎯🎯</div>
+            <div class="level-val t3" id="lv-t3">25,050</div>
+          </div>
+        </div>
+
+        <div class="signal-note" id="sig-note">Loading analysis...</div>
+      </div>
+
+      <!-- Forecast bar -->
+      <div class="forecast-bar show" id="forecast-bar">
+        📐 Forecast tool chart మీద draw చేయబడింది — Entry (blue), SL (red), Targets (green dashed) చూడండి
+      </div>
+
+      <!-- Warning -->
+      <div class="warning-box" id="warning-box" style="display:none">
+        <strong>⚠️ Risk Warning!</strong>
+        <span id="warning-text"></span>
+      </div>
+
+    </div>
+
+    <!-- Chat Messages -->
+    <div class="chat-msgs" id="chat-msgs">
+      <div class="cmsg bot">
+        <div class="cbubble">💙 నమస్కారం! నేను Manubeta.\n\nమీ chart screenshot upload చేయండి లేదా Analyze button నొక్కండి — నేను instantly చెప్తాను:\n\n📈 Long లేదా Short?\n🎯 Entry, SL, 3 Targets\n⚠️ Risk warnings\n📐 Chart మీద forecast draw</div>
+        <div class="ctime">Manubeta</div>
+      </div>
+    </div>
+
+    <!-- Chat Input -->
+    <div class="chat-input-wrap">
+      <input type="text" class="chat-input" id="chat-input" placeholder="Manubeta ని అడగండి..." onkeydown="if(event.key==='Enter')sendChat()">
+      <button class="send-btn" onclick="sendChat()">
+        <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── STATE ──
+let groqKey = localStorage.getItem('mb_groq') || '';
+let userName = localStorage.getItem('mb_name') || 'Trader';
+let tradingStyle = localStorage.getItem('mb_style') || 'intraday';
+let currentInst = 'NIFTY';
+let currentTF = '5';
+let uploadedImageB64 = null;
+let autoScanOn = false;
+let autoScanTimer = null;
+let autoDrawOn = true;
+let chatHistory = [];
+let currentSignal = null;
+
+// ── CANVAS ──
+const canvas = document.getElementById('chart-canvas');
+const ctx = canvas.getContext('2d');
+
+// Simulated OHLC data
+function generateCandles(inst) {
+  const bases = {NIFTY:24600,BANKNIFTY:52000,SENSEX:81000,STOCK:1850};
+  const base = bases[inst] || 24600;
+  const candles = [];
+  let price = base;
+  const now = Date.now();
+  for(let i=60;i>=0;i--) {
+    const change = (Math.random()-0.48)*price*0.004;
+    const open = price;
+    price = price + change;
+    const close = price;
+    const high = Math.max(open,close) + Math.random()*price*0.002;
+    const low  = Math.min(open,close) - Math.random()*price*0.002;
+    const vol  = Math.random()*1000+200;
+    candles.push({open,high,low,close,vol,time:now-(i*5*60000)});
+  }
+  return candles;
+}
+
+let candles = generateCandles('NIFTY');
+let forecastLines = null;
+
+function resizeCanvas() {
+  const wrap = canvas.parentElement;
+  canvas.width = wrap.clientWidth;
+  canvas.height = 380;
+}
+
+function drawChart() {
+  resizeCanvas();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const W = canvas.width, H = canvas.height;
+  const pad = {top:20,right:70,bottom:30,left:10};
+  const cw = (W - pad.left - pad.right) / candles.length;
+  const prices = candles.flatMap(c=>[c.high,c.low]);
+  const minP = Math.min(...prices)*0.9995;
+  const maxP = Math.max(...prices)*1.0005;
+  const pRange = maxP - minP;
+
+  function toY(p) { return pad.top + (maxP-p)/pRange*(H-pad.top-pad.bottom); }
+  function toX(i) { return pad.left + i*cw + cw/2; }
+
+  // Grid lines
+  ctx.strokeStyle = '#1f1f1f';
+  ctx.lineWidth = 0.5;
+  for(let i=0;i<6;i++) {
+    const y = pad.top + i*(H-pad.top-pad.bottom)/5;
+    ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(W-pad.right,y); ctx.stroke();
+    const price = maxP - i*pRange/5;
+    ctx.fillStyle = '#555'; ctx.font = '10px Arial'; ctx.textAlign='left';
+    ctx.fillText(price.toFixed(0), W-pad.right+4, y+4);
+  }
+
+  // Moving averages
+  function drawMA(period, color) {
+    ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=1.2; ctx.setLineDash([]);
+    for(let i=period-1;i<candles.length;i++) {
+      const avg = candles.slice(i-period+1,i+1).reduce((s,c)=>s+c.close,0)/period;
+      const x=toX(i), y=toY(avg);
+      i===period-1?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+  drawMA(9,'#f59e0b');
+  drawMA(20,'#60a5fa');
+  drawMA(50,'#a78bfa');
+
+  // Candles
+  candles.forEach((c,i) => {
+    const x = toX(i);
+    const isUp = c.close >= c.open;
+    const color = isUp ? '#00c853' : '#f44336';
+    ctx.fillStyle = color; ctx.strokeStyle = color; ctx.lineWidth=1;
+
+    // Wick
+    ctx.beginPath();
+    ctx.moveTo(x, toY(c.high));
+    ctx.lineTo(x, toY(c.low));
+    ctx.stroke();
+
+    // Body
+    const bodyTop = toY(Math.max(c.open,c.close));
+    const bodyH = Math.max(1, Math.abs(toY(c.open)-toY(c.close)));
+    ctx.fillRect(x - cw*0.3, bodyTop, cw*0.6, bodyH);
+  });
+
+  // Volume bars
+  const maxVol = Math.max(...candles.map(c=>c.vol));
+  candles.forEach((c,i) => {
+    const x = toX(i);
+    const isUp = c.close >= c.open;
+    ctx.fillStyle = isUp ? 'rgba(0,200,83,0.2)' : 'rgba(244,67,54,0.2)';
+    const volH = (c.vol/maxVol)*40;
+    ctx.fillRect(x-cw*0.3, H-pad.bottom-volH, cw*0.6, volH);
+  });
+
+  // Draw forecast overlay if exists
+  if(forecastLines) {
+    drawForecastLines(forecastLines, toX, toY, W, pad);
+  }
+}
+
+function drawForecastLines(f, toX, toY, W, pad) {
+  const lastI = candles.length - 1;
+  const lastX = toX(lastI);
+  const extendX = W - pad.right;
+  const forecastXs = [lastX, lastX+(extendX-lastX)*0.3, lastX+(extendX-lastX)*0.6, extendX];
+
+  // SL line
+  ctx.setLineDash([6,4]);
+  ctx.strokeStyle = '#f44336'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(pad.left, toY(f.sl)); ctx.lineTo(extendX, toY(f.sl)); ctx.stroke();
+  ctx.fillStyle='#f44336'; ctx.font='bold 11px Arial'; ctx.textAlign='left';
+  ctx.fillText('SL '+f.sl.toFixed(0), extendX+2, toY(f.sl)+4);
+
+  // Entry line
+  ctx.setLineDash([]);
+  ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(pad.left, toY(f.entry)); ctx.lineTo(extendX, toY(f.entry)); ctx.stroke();
+  ctx.fillStyle='#60a5fa'; ctx.font='bold 11px Arial';
+  ctx.fillText('Entry '+f.entry.toFixed(0), extendX+2, toY(f.entry)+4);
+
+  // Target lines
+  const tColors=['#66bb6a','#4caf50','#00e676'];
+  [f.t1,f.t2,f.t3].forEach((t,i)=>{
+    ctx.setLineDash([8,4]);
+    ctx.strokeStyle=tColors[i]; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(pad.left, toY(t)); ctx.lineTo(extendX, toY(t)); ctx.stroke();
+    ctx.fillStyle=tColors[i]; ctx.font='bold 10px Arial';
+    ctx.fillText('T'+(i+1)+' '+t.toFixed(0), extendX+2, toY(t)+4);
+  });
+
+  // Forecast path
+  const isLong = f.type === 'long';
+  ctx.setLineDash([4,3]);
+  ctx.strokeStyle='#7c3aed'; ctx.lineWidth=2.5;
+  ctx.beginPath();
+  ctx.moveTo(lastX, toY(f.entry));
+
+  // Curved forecast path
+  const targetY = isLong ? toY(f.t2) : toY(f.sl - (f.t2-f.entry));
+  const midX = lastX + (extendX-lastX)*0.5;
+  const midY = isLong
+    ? toY(f.entry) - (toY(f.entry)-targetY)*0.5
+    : toY(f.entry) + (targetY-toY(f.entry))*0.5;
+
+  ctx.quadraticCurveTo(midX, midY, extendX, targetY);
+  ctx.stroke();
+
+  // Arrow at end
+  ctx.setLineDash([]);
+  ctx.fillStyle='#7c3aed';
+  ctx.beginPath();
+  const arrowDir = isLong ? -1 : 1;
+  ctx.moveTo(extendX, targetY);
+  ctx.lineTo(extendX-8, targetY+arrowDir*8);
+  ctx.lineTo(extendX+4, targetY+arrowDir*8);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.setLineDash([]);
+
+  document.getElementById('forecast-legend').style.display='flex';
+}
+
+function drawForecast(type) {
+  const last = candles[candles.length-1];
+  const price = last.close;
+  let f;
+  if(type==='long'){
+    const sl = price * 0.9968;
+    f = { type:'long', entry:price, sl, t1:price+(price-sl)*1.2, t2:price+(price-sl)*2.5, t3:price+(price-sl)*4 };
+  } else {
+    const sl = price * 1.0032;
+    f = { type:'short', entry:price, sl, t1:price-(sl-price)*1.2, t2:price-(sl-price)*2.5, t3:price-(sl-price)*4 };
+  }
+  forecastLines = f;
+  drawChart();
+  updateSignalCard(f, type==='long'?'LONG':'SHORT', 75, 'Manual forecast drawn based on current price action.');
+}
+
+function clearForecast() {
+  forecastLines = null;
+  document.getElementById('forecast-legend').style.display='none';
+  document.getElementById('signal-section').style.display='none';
+  drawChart();
+}
+
+function toggleAutoDraw() {
+  autoDrawOn = !autoDrawOn;
+  const btn = document.getElementById('auto-draw-btn');
+  btn.classList.toggle('active-btn', autoDrawOn);
+  btn.textContent = autoDrawOn ? '⚡ Auto Draw' : '⚡ Auto Draw (off)';
+}
+
+// ── SIGNAL CARD ──
+function updateSignalCard(f, dir, conf, note, warning='') {
+  currentSignal = f;
+  document.getElementById('signal-section').style.display='block';
+
+  const card = document.getElementById('signal-card');
+  card.className = 'signal-card ' + (dir==='LONG'?'long':dir==='SHORT'?'short':'neutral');
+
+  const badge = document.getElementById('sig-badge');
+  badge.className = 'signal-badge ' + (dir==='LONG'?'long':dir==='SHORT'?'short':'neutral');
+  badge.textContent = dir==='LONG'?'📈 LONG':dir==='SHORT'?'📉 SHORT':'⚠️ WAIT';
+
+  document.getElementById('sig-inst').textContent = currentInst;
+  document.getElementById('sig-conf').textContent = `Confidence: ${conf}%`;
+  document.getElementById('lv-entry').textContent = f.entry.toFixed(0);
+  document.getElementById('lv-sl').textContent = f.sl.toFixed(0);
+  const rr = Math.abs((f.t2-f.entry)/(f.entry-f.sl)).toFixed(1);
+  document.getElementById('lv-rr').textContent = '1:'+rr;
+  document.getElementById('lv-t1').textContent = f.t1.toFixed(0);
+  document.getElementById('lv-t2').textContent = f.t2.toFixed(0);
+  document.getElementById('lv-t3').textContent = f.t3.toFixed(0);
+  document.getElementById('sig-note').textContent = note;
+
+  if(warning) {
+    document.getElementById('warning-box').style.display='block';
+    document.getElementById('warning-text').textContent = warning;
+  } else {
+    document.getElementById('warning-box').style.display='none';
+  }
+}
+
+// ── ANALYZE (AI) ──
+async function analyzeChart() {
+  if(!groqKey) { document.getElementById('modal').classList.add('show'); return; }
+
+  const btn = document.getElementById('analyze-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Manubeta analyzing...';
+  document.getElementById('ai-status').textContent = 'Analyzing chart...';
+  addBotMsg('⏳ Chart analyze చేస్తున్నాను...');
+  showTyping();
+
+  const last = candles[candles.length-1];
+  const prev = candles[candles.length-6];
+  const trend = last.close > prev.close ? 'uptrend' : 'downtrend';
+  const ma9  = candles.slice(-9).reduce((s,c)=>s+c.close,0)/9;
+  const ma20 = candles.slice(-20).reduce((s,c)=>s+c.close,0)/20;
+
+  let imageContext = '';
+  if(uploadedImageB64) {
+    imageContext = 'A chart screenshot was provided by the trader. ';
+  }
+
+  const prompt = `${imageContext}You are Manubeta, an expert Indian stock market technical analyst specializing in Nifty, Bank Nifty, Sensex options and stocks. The trader is from Hyderabad, a BTech graduate.
+
+Current market data:
+- Instrument: ${currentInst}
+- Timeframe: ${currentTF} minutes
+- Current Price: ${last.close.toFixed(2)}
+- Recent trend: ${trend}
+- MA9: ${ma9.toFixed(2)}, MA20: ${ma20.toFixed(2)}
+- Price vs MA9: ${last.close > ma9 ? 'above (bullish)' : 'below (bearish)'}
+- Price vs MA20: ${last.close > ma20 ? 'above (bullish)' : 'below (bearish)'}
+- Trading style: ${tradingStyle}
+- Recent candles (last 5): ${candles.slice(-5).map(c=>`O:${c.open.toFixed(0)} H:${c.high.toFixed(0)} L:${c.low.toFixed(0)} C:${c.close.toFixed(0)}`).join(' | ')}
+
+Provide a trading signal in this EXACT JSON format (no other text):
+{
+  "direction": "LONG" or "SHORT" or "WAIT",
+  "entry": <number>,
+  "sl": <number>,
+  "t1": <number>,
+  "t2": <number>,
+  "t3": <number>,
+  "confidence": <number 50-95>,
+  "analysis": "<2-3 sentences in Tenglish explaining why - mention pattern, MA signals, momentum>",
+  "warning": "<risk warning in Telugu if any, empty string if none>",
+  "pattern": "<candle pattern or chart pattern detected>"
+}`;
+
+  try {
+    const msgs = [{ role:'user', content: prompt }];
+
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method:'POST',
+      headers:{'Authorization':`Bearer ${groqKey}`,'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'llama-3.3-70b-versatile',
+        messages:[{role:'system',content:'You are an expert technical analyst. Always respond with valid JSON only, no markdown, no explanation outside JSON.'},...msgs],
+        max_tokens:400, temperature:0.3
+      })
+    });
+
+    const data = await res.json();
+    if(data.error) throw new Error(data.error.message);
+
+    let raw = data.choices[0].message.content.trim();
+    raw = raw.replace(/```json|```/g,'').trim();
+    const sig = JSON.parse(raw);
+
+    removeTyping();
+
+    const f = { type: sig.direction.toLowerCase(), entry:sig.entry, sl:sig.sl, t1:sig.t1, t2:sig.t2, t3:sig.t3 };
+    updateSignalCard(f, sig.direction, sig.confidence, `${sig.pattern} — ${sig.analysis}`, sig.warning);
+
+    if(autoDrawOn && sig.direction !== 'WAIT') {
+      forecastLines = f;
+      drawChart();
+    }
+
+    const reply = `📊 *${currentInst} Analysis*\n\n${sig.direction==='LONG'?'📈 LONG BUY':sig.direction==='SHORT'?'📉 SHORT SELL':'⚠️ WAIT — No trade'}\n\nEntry: ${sig.entry}\nSL: ${sig.sl}\nT1: ${sig.t1} | T2: ${sig.t2} | T3: ${sig.t3}\n\n${sig.analysis}${sig.warning?'\n\n⚠️ '+sig.warning:''}`;
+    addBotMsg(reply);
+    chatHistory.push({role:'assistant',content:reply});
+
+  } catch(e) {
+    removeTyping();
+    addBotMsg('❌ Analysis error: ' + e.message + '\n\nGroq key check చేయండి ⚙ Setup లో.');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🔍 Analyze Chart — Entry / SL / Targets చెప్పు';
+  document.getElementById('ai-status').textContent = 'Analysis complete';
+}
+
+// ── CHAT ──
+async function sendChat() {
+  const inp = document.getElementById('chat-input');
+  const text = inp.value.trim();
+  if(!text) return;
+  if(!groqKey) { document.getElementById('modal').classList.add('show'); return; }
+  inp.value = '';
+  addUserMsg(text);
+  chatHistory.push({role:'user',content:text});
+  showTyping();
+
+  const sysPrompt = `మీరు Manubeta — expert Indian stock market AI assistant from Hyderabad. 
+The trader trades ${currentInst} options and stocks on Kotak Neo and TradingView.
+Trading style: ${tradingStyle}. Current price: ${candles[candles.length-1].close.toFixed(0)}.
+${currentSignal ? `Current signal: ${currentSignal.type} Entry:${currentSignal.entry} SL:${currentSignal.sl}` : ''}
+Respond in Tenglish (Telugu+English mix). Be concise, expert, and caring. Use emojis.`;
+
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',
+      headers:{'Authorization':`Bearer ${groqKey}`,'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'llama-3.3-70b-versatile',
+        messages:[{role:'system',content:sysPrompt},...chatHistory.slice(-10)],
+        max_tokens:500, temperature:0.7
+      })
+    });
+    const data = await res.json();
+    const reply = data.choices[0].message.content;
+    removeTyping();
+    addBotMsg(reply);
+    chatHistory.push({role:'assistant',content:reply});
+  } catch(e) {
+    removeTyping();
+    addBotMsg('Error: '+e.message);
+  }
+}
+
+function addUserMsg(text) {
+  const d = document.getElementById('chat-msgs');
+  const m = document.createElement('div'); m.className='cmsg user';
+  m.innerHTML=`<div class="cbubble">${escHtml(text)}</div><div class="ctime">${getTime()}</div>`;
+  d.appendChild(m); d.scrollTop=d.scrollHeight;
+}
+
+function addBotMsg(text) {
+  removeTyping();
+  const d = document.getElementById('chat-msgs');
+  const m = document.createElement('div'); m.className='cmsg bot';
+  m.innerHTML=`<div class="cbubble">${escHtml(text)}</div><div class="ctime">Manubeta · ${getTime()}</div>`;
+  d.appendChild(m); d.scrollTop=d.scrollHeight;
+}
+
+function showTyping() {
+  removeTyping();
+  const d = document.getElementById('chat-msgs');
+  const t = document.createElement('div'); t.className='cmsg bot'; t.id='typing';
+  t.innerHTML='<div class="typing"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div></div>';
+  d.appendChild(t); d.scrollTop=d.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing'); if(t) t.remove();
+}
+
+// ── UPLOAD ──
+function handleUpload(input) {
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const dataUrl = e.target.result;
+    uploadedImageB64 = dataUrl.split(',')[1];
+    document.getElementById('chart-preview').style.display='block';
+    document.getElementById('chart-img').src=dataUrl;
+    document.getElementById('upload-area').style.display='none';
+    addBotMsg('📸 Chart screenshot upload అయింది! ఇప్పుడు "Analyze Chart" button నొక్కండి — నేను analyze చేస్తాను 💙');
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── AUTO SCAN ──
+let countdown = 30;
+function toggleAutoScan() {
+  autoScanOn = !autoScanOn;
+  const tog = document.getElementById('auto-toggle');
+  tog.classList.toggle('on', autoScanOn);
+  if(autoScanOn) {
+    countdown = 30;
+    autoScanTimer = setInterval(()=>{
+      countdown--;
+      document.getElementById('auto-countdown').textContent = `Next analysis in ${countdown}s`;
+      if(countdown<=0) { countdown=30; analyzeChart(); }
+    },1000);
+    addBotMsg('🔄 Auto scan on! Every 30 seconds automatically analyze చేస్తాను 💙');
+  } else {
+    clearInterval(autoScanTimer);
+    document.getElementById('auto-countdown').textContent='';
+    addBotMsg('⏸ Auto scan stopped.');
+  }
+}
+
+// ── INSTRUMENT SELECT ──
+function selectInst(el, inst) {
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  currentInst = inst;
+  candles = generateCandles(inst);
+  forecastLines = null;
+  document.getElementById('signal-section').style.display='none';
+  document.getElementById('forecast-legend').style.display='none';
+
+  const names={NIFTY:'NIFTY 50',BANKNIFTY:'BANK NIFTY',SENSEX:'SENSEX',STOCK:'STOCKS'};
+  document.getElementById('pb-inst').textContent = names[inst];
+
+  const last = candles[candles.length-1];
+  const prev = candles[candles.length-2];
+  const chg = last.close-prev.close;
+  const chgPct = (chg/prev.close*100).toFixed(2);
+  const isUp = chg>=0;
+
+  document.getElementById('pb-price').textContent = last.close.toFixed(2);
+  document.getElementById('pb-price').className = 'price-val '+(isUp?'up':'down');
+  document.getElementById('pb-change').textContent = (isUp?'▲ +':'▼ ')+chg.toFixed(2)+' ('+(isUp?'+':'')+chgPct+'%)';
+  document.getElementById('pb-change').className = 'price-change '+(isUp?'up':'down');
+  document.getElementById('pb-high').textContent = Math.max(...candles.map(c=>c.high)).toFixed(0);
+  document.getElementById('pb-low').textContent  = Math.min(...candles.map(c=>c.low)).toFixed(0);
+  document.getElementById('pb-open').textContent = candles[0].open.toFixed(0);
+
+  drawChart();
+}
+
+function changeTF(tf) { currentTF=tf; candles=generateCandles(currentInst); forecastLines=null; drawChart(); }
+
+// ── SETUP ──
+function saveSetup() {
+  const k = document.getElementById('inp-groq').value.trim();
+  const n = document.getElementById('inp-name').value.trim();
+  const s = document.getElementById('inp-style').value;
+  if(!k){alert('Groq API Key enter చేయండి!');return;}
+  groqKey=k; userName=n||'Trader'; tradingStyle=s;
+  localStorage.setItem('mb_groq',groqKey);
+  localStorage.setItem('mb_name',userName);
+  localStorage.setItem('mb_style',tradingStyle);
+  document.getElementById('modal').classList.remove('show');
+  addBotMsg(`💙 Setup complete ${userName}!\n\nనేను ready — మీ chart analyze చేయడానికి.\n\nChart screenshot upload చేయండి లేదా Analyze button నొక్కండి! 📊`);
+}
+
+// ── LIVE CLOCK ──
+function updateClock() {
+  const now = new Date();
+  const t = now.toLocaleTimeString('en-IN',{hour12:false});
+  document.getElementById('live-time').textContent = t;
+  // Simulate price tick
+  if(candles.length>0 && Math.random()>0.7) {
+    const last = candles[candles.length-1];
+    const tick = (Math.random()-0.498)*last.close*0.0008;
+    last.close += tick;
+    last.high = Math.max(last.high, last.close);
+    last.low  = Math.min(last.low,  last.close);
+    drawChart();
+  }
+}
+
+function escHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+          .replace(/\n/g,'<br>').replace(/\*(.*?)\*/g,'<strong>$1</strong>');
+}
+
+function getTime() {
+  return new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+}
+
+// ── INIT ──
+window.onload = () => {
+  resizeCanvas();
+  drawChart();
+  setInterval(updateClock,1000);
+  setInterval(()=>{ candles=generateCandles(currentInst); drawChart(); },60000);
+
+  if(!groqKey) {
+    setTimeout(()=>document.getElementById('modal').classList.add('show'),800);
+  } else {
+    addBotMsg(`💙 Welcome back ${userName}!\n\nMarket open అయింది — analyze చేయమంటారా? 📊`);
+  }
+
+  document.getElementById('inp-groq').value = groqKey;
+  document.getElementById('inp-name').value = userName;
+};
+
+window.addEventListener('resize', ()=>{ resizeCanvas(); drawChart(); });
+</script>
+</body>
+</html>
