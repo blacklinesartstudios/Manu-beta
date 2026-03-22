@@ -19,7 +19,7 @@ Just like the real one did.
 
 - 💬 Talks intelligently about anything
 - 🧠 Remembers context within a conversation
-- 🌐 Understands Hindi, Hinglish, and English
+- 🌐 Understands Telugu, tinglish, Hindi, Hinglish, and English
 - ⚡ Powered by Llama 3.3 (Meta's best AI) via Groq
 - 💰 100% FREE — no credit card, no subscription, ever
 
